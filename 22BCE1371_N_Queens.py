@@ -33,7 +33,7 @@ class NQueens:
                                 abs(row - i) != abs(col - j) and
                                 self.board[i][j] == 1):
                                 count += 1
-        return count // 2  # Each pair is counted twice
+        return count // 2
 
     def place_queens(self, row):
         if row >= self.n:
@@ -43,31 +43,37 @@ class NQueens:
                 self.board[row][col] = 1
                 if self.place_queens(row + 1):
                     return True
-                self.board[row][col] = 0  # Backtrack
+                self.board[row][col] = 0
         return False
 
     def reset_board(self):
         self.board = [[0 for _ in range(self.n)] for _ in range(self.n)]
 
     def is_goal_state(self):
-        """Check if the current board configuration is the goal state."""
         for row in range(self.n):
             if sum(self.board[row]) != 1:
                 return False
-        for col in range(self.n):
-            count = sum(self.board[row][col] for row in range(self.n))
-            if count != 1:
-                return False
+            for col in range(self.n):
+                count = sum(self.board[row][col] for row in range(self.n))
+                if count != 1:
+                    return False
+                for row in range(self.n):
+                    for col in range(self.n):
+                        if self.board[row][col] == 1:
+                            for i, j in zip(range(row - 1, -1, -1), range(col - 1, -1, -1)):
+                                if self.board[i][j] == 1:
+                                    return False
+                                for i, j in zip(range(row - 1, -1, -1), range(col + 1, self.n)):
+                                    if self.board[i][j] == 1:
+                                        return False
         return True
-
 
 class NQueensGUI:
     def __init__(self, master):
         self.master = master
-        self.n = 4  # Default value
+        self.n = 4
         self.n_queens = NQueens(self.n)
 
-        # Create input fields for board size
         self.size_frame = tk.Frame(master)
         self.size_frame.pack(pady=5)
         self.size_label = tk.Label(self.size_frame, text="Enter board size (n):")
@@ -83,39 +89,35 @@ class NQueensGUI:
         self.input_entry = tk.Entry(self.input_frame)
         self.input_entry.pack(side=tk.LEFT)
 
-        # Create a frame for the buttons
         self.button_frame = tk.Frame(master)
         self.button_frame.pack(pady=5)
 
         self.submit_button = tk.Button(self.button_frame, text="Display Queens", command=self.display_initial_state)
-        self.submit_button.pack(side=tk.LEFT, padx=5)  # Side by side with padding
+        self.submit_button.pack(side=tk.LEFT, padx=5)
 
         self.solve_button = tk.Button(self.button_frame, text="Solve N-Queens", command=self.solve_n_queens)
-        self.solve_button.pack(side=tk.LEFT, padx=5)  # Side by side with padding
+        self.solve_button.pack(side=tk.LEFT, padx=5)
 
         self.canvas = tk.Canvas(master, width=400, height=400)
         self.canvas.pack(fill=tk.BOTH, expand=True)
-        self.canvas.bind("<Configure>", self.resize_canvas)  # Bind resize event
+        self.canvas.bind("<Configure>", self.resize_canvas)
         self.draw_board()
 
-        # Bind the size entry to update board size
         self.size_entry.bind("<Return>", self.update_board_size)
 
     def update_board_size(self, event):
-        """Update the board size based on user input."""
         try:
             new_n = int(self.size_entry.get())
             if new_n < 4:
                 raise ValueError("N must be at least 4")
             self.n = new_n
             self.n_queens = NQueens(self.n)
-            self.input_entry.delete(0, tk.END)  # Clear previous input
+            self.input_entry.delete(0, tk.END)
             self.draw_board()
         except ValueError as e:
             messagebox.showerror("Error", str(e))
 
     def display_initial_state(self):
-        """Get initial states from user input and display them."""
         input_str = self.input_entry.get()
         positions = input_str.split(',')
 
@@ -123,7 +125,7 @@ class NQueensGUI:
             messagebox.showerror("Error", f"Please enter {self.n} positions.")
             return
 
-        self.n_queens.reset_board()  # Reset board
+        self.n_queens.reset_board()
         try:
             for row in range(self.n):
                 col = int(positions[row].strip())
@@ -136,46 +138,37 @@ class NQueensGUI:
             return
 
         heuristic = self.n_queens.heuristic_value()
-        print("Heuristic value for the given state:", heuristic)  # Print heuristic value
+        print("\nHeuristic value for the given state:", heuristic)
 
-        # Check if the initial state is a goal state
         if self.n_queens.is_goal_state():
             print("The initial state is a goal state!")
 
         self.draw_board()
 
     def solve_n_queens(self):
-        """Solve the N-Queens problem and display the solution."""
-        self.n_queens.reset_board()  # Reset board
+        self.n_queens.reset_board()
         self.n_queens.place_queens(0)
         self.draw_board()
         heuristic = self.n_queens.heuristic_value()
         print("Heuristic value for the solution state:", heuristic)
 
     def resize_canvas(self, event):
-        """Resize the canvas and redraw the board."""
         self.draw_board()
 
     def draw_board(self):
-        """Draw the chessboard and place queens."""
         self.canvas.delete("all")
         cell_size = min(self.canvas.winfo_width(), self.canvas.winfo_height()) // self.n
         for i in range(self.n):
             for j in range(self.n):
                 color = "white" if (i + j) % 2 == 0 else "black"
-                self.canvas.create_rectangle(j * cell_size, i * cell_size,
-                                              (j + 1) * cell_size, (i + 1) * cell_size,
-                                              fill=color)
+                self.canvas.create_rectangle(j * cell_size, i * cell_size, (j + 1) * cell_size, (i + 1) * cell_size, fill=color)
                 if self.n_queens.board[i][j] == 1:
-                    self.canvas.create_oval(j * cell_size + 10, i * cell_size + 10,
-                                            (j + 1) * cell_size - 10, (i + 1) * cell_size - 10,
-                                            fill="red")
+                    self.canvas.create_oval(j * cell_size + 10, i * cell_size + 10, (j + 1) * cell_size - 10, (i + 1) * cell_size - 10, fill="red")
 
-# Example usage of the GUI
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("N-Queens Problem")
-    root.geometry("680x800")  # Initial window size
-    root.resizable(True, True)  # Make the window resizable
+    root.geometry("680x800")
+    root.resizable(True, True)
     app = NQueensGUI(root)
     root.mainloop()
